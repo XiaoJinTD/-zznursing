@@ -41,6 +41,13 @@ export function getPropertyStatusList(params) {
     data:params
   })
 }
+// 查看设备上报的数据-列表
+export function getPropertyServiceList(iotId) {
+  return request({
+    url: '/nursing/device/queryServiceProperties/'+iotId,
+    method: 'get'
+  })
+}
 // 获取设备数据分页结果-查看数据
 export function getDataList(params) {
   return request({
