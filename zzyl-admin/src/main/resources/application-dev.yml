@@ -204,3 +204,8 @@ baidu:
     apiKey: bce-v3/ALTAK-4VXbijt1HIxOSAlBnKJ7j/d86f290404cfa9a236d51a749b58a4fe866bfab1
     baseUrl: https://qianfan.baidubce.com/v2/
     model: ernie-4.0-8k
+
+# 微信小程序相关配置
+wechat:
+  appId: wxa39a14b7d56965df
+  appSecret: 738b3c78afa984044150eac4d51cb635
