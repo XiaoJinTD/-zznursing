@@ -57,4 +57,9 @@ public interface IReservationService extends IService<Reservation>
      */
     int cancelReservation(Long id);
 
+    /**
+     * 定时更新过期预约的状态
+     */
+    void updateReservationStatus();
+
 }
