@@ -141,4 +141,20 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationMapper, Reser
         }
     }
 
+    /**
+     * 定时更新过期预约的状态
+     */
+    @Override
+    public void updateReservationStatus() {
+        // 查询预约时间小于当前时间减30分钟且状态为0-待报到的预约
+        List<Reservation> reservations = reservationMapper.selectList(Wrappers.<Reservation>lambdaQuery()
+                .lt(Reservation::getTime, LocalDateTime.now().minusMinutes(30))
+                .eq(Reservation::getStatus, 0));
+
+        // 设置状态为已过期
+        reservations.forEach(reservation -> reservation.setStatus(3));
+        // 批量更新
+        updateBatchById(reservations);
+    }
+
 }
