@@ -20,17 +20,15 @@ export function listDevice(query) {
 // 查询设备详细
 export function getDevice(data) {
   return request({
-    url: '/nursing/device/queryDeviceDetail',
-    method: 'post',
-    data: data
+    url: '/nursing/device/'+data.iotId,
+    method: 'get'
   })
 }
 // 详情运行状态事件管理-查看指定产品的已发布物模型中的功能定义详情
 export function getPublishedList(params) {
   return request({
-    url: '/nursing/device/queryThingModelPublished',
-    method: 'post',
-    data:params
+    url: '/nursing/device/queryProduct/'+params.productKey,
+    method: 'get'
   })
 }
 // 详情运行状态状态的卡片-列表
