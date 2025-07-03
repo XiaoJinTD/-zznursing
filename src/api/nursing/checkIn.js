@@ -3,7 +3,7 @@ import request from '@/utils/request'
 //查询老人列表
 export function listElderPageQuery (query) {
   return request({
-    url: '/nursing/elder/pageQuery',
+    url: '/nursing/elder/list',
     method: 'get',
     params: query
   })
