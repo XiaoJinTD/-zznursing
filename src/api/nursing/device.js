@@ -73,11 +73,10 @@ export function updateDevice(data) {
 }
 
 // 删除设备
-export function delDevice(params) {
+export function delDevice(iotId) {
   return request({
-    url: '/nursing/device',
-    method: 'delete',
-    data:params
+    url: '/nursing/device/' + iotId,
+    method: 'delete'
   })
 }
 
