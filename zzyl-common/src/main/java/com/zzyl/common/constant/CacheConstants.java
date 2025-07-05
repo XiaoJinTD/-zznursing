@@ -61,4 +61,9 @@ public class CacheConstants
      * 体检报告缓存key
      */
     public static final String HEALTH_REPORT = "healthReport";
+
+    /**
+     * 物联网平台产品列表缓存key
+     */
+    public static final String IOT_ALL_PRODUCT_LIST = "iot:all_product_list";
 }
