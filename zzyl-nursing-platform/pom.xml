@@ -27,6 +27,12 @@
             <groupId>com.zzyl</groupId>
             <artifactId>zzyl-oss</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-jms-client</artifactId>
+            <version>0.61.0</version>
+        </dependency>
     </dependencies>
 
 </project>
