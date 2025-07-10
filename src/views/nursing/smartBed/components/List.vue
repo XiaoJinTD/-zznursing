@@ -239,13 +239,13 @@ const getSameRoomData = (array1, array2) => {
 // 根据睡眠状态获取对应的心率或者离床次数物模型
 const getWuDataBySleepStatus = (item) => {
   const obj = getRoomWuData(item).filter(
-    (item) => item.functionId === 'shuimianzhuangtai'
+    (item) => item.functionId === 'SleepPhaseState'
   )
   if (obj.length) {
     const arr = getRoomWuData(item).filter(
       (item) =>
         item.functionId ===
-        (obj[0].dataValue === '2' ? 'lichuangcishu' : 'HeartRate')
+        (obj[0].dataValue === '2' ? 'BedExitCount' : 'HeartRate')
     )
     return arr[0]
   }
@@ -254,14 +254,14 @@ const getWuDataBySleepStatus = (item) => {
 // 根据睡眠状态获取对应的呼吸率或者离床时间物模型
 const getWuDataBySleepStatus1 = (item) => {
   const obj = getRoomWuData(item).filter(
-    (item) => item.functionId === 'shuimianzhuangtai'
+    (item) => item.functionId === 'SleepPhaseState'
   )
 
   if (obj.length) {
     const arr = getRoomWuData(item).filter(
       (item) =>
         item.functionId ===
-        (obj[0].dataValue === '2' ? 'lichuangshijian' : 'RespiratoryRate')
+        (obj[0].dataValue === '2' ? 'BedTime' : 'RespiratoryRate')
     )
     return obj[0].dataValue === '2'
       ? { ...arr[0], dataValue: timestampToTime(arr[0]?.dataValue) }
@@ -272,7 +272,7 @@ const getWuDataBySleepStatus1 = (item) => {
 // 获取睡眠状态对应的图片
 const getSleepStatusImg = (item) => {
   const obj = getRoomWuData(item).filter(
-    (item) => item.functionId === 'shuimianzhuangtai'
+    (item) => item.functionId === 'SleepPhaseState'
   )
   if (obj[0]) {
     return sleepStatus[Number(obj[0].dataValue)]?.src
@@ -282,7 +282,7 @@ const getSleepStatusImg = (item) => {
 // 获取睡眠状态对应的文案
 const getSleepStatusText = (item) => {
   const obj = getRoomWuData(item).filter(
-    (item) => item.functionId === 'shuimianzhuangtai'
+    (item) => item.functionId === 'SleepPhaseState'
   )
   if (obj[0]) {
     return sleepStatus[Number(obj[0].dataValue)].value
