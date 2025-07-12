@@ -66,4 +66,9 @@ public class CacheConstants
      * 物联网平台产品列表缓存key
      */
     public static final String IOT_ALL_PRODUCT_LIST = "iot:all_product_list";
+
+    /**
+     * 物联网平台设备最新数据缓存key
+     */
+    public static final String IOT_DEVICE_LAST_DATA = "iot:device_last_data";
 }
