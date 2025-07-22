@@ -327,4 +327,32 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         // 删除本地存储的设备
         remove(Wrappers.<Device>lambdaQuery().eq(Device::getIotId, iotId));
     }
+
+    /**
+     * 查询产品详情
+     *
+     * @param productKey    产品key
+     */
+    @Override
+    public AjaxResult queryProduct(String productKey) {
+        // 参数校验
+        if (StringUtils.isEmpty(productKey)) {
+            throw new BaseException("产品key不能为空");
+        }
+        // 调用华为云接口查询产品详情
+        ShowProductRequest showProductRequest = new ShowProductRequest();
+        showProductRequest.setProductId(productKey);
+        ShowProductResponse response;
+        try {
+            response = iotDAClient.showProduct(showProductRequest);
+        } catch (Exception e) {
+            throw new BaseException("查询产品详情失败");
+        }
+        // 解析结果并判断结果中是否有咱们需要的数据
+        List<ServiceCapability> serviceCapabilities = response.getServiceCapabilities();
+        if (CollUtil.isEmpty(serviceCapabilities)) {
+            return AjaxResult.success(Collections.emptyList());
+        }
+        return AjaxResult.success(serviceCapabilities);
+    }
 }

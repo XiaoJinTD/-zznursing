@@ -223,3 +223,7 @@ huaweicloud:
   accessKey: dfqGvmWL
   accessCode: 6HEVLBLPJ0cqbNTphL8seco7SYx9aKQZ
   queueName: DefaultQueue   #默认无需改动
+
+alert:
+  deviceMaintainerRole: 维修工
+  managerRole: 超级管理员
