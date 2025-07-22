@@ -94,4 +94,9 @@ public interface IDeviceService extends IService<Device>
      * 删除设备
      */
     void deleteDevice(String iotId);
+
+    /**
+     * 查询产品详情
+     */
+    AjaxResult queryProduct(String productKey);
 }
