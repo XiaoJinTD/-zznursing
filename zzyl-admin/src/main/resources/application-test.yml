@@ -53,9 +53,9 @@ spring:
     druid:
       # 主库数据源
       master:
-        url: jdbc:mysql://192.168.100.168:3306/zzyl?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+        url: jdbc:mysql://rm-2zen2191c0850bk3moo.mysql.rds.aliyuncs.com:3306/zzyl?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
         username: root
-        password: heima123
+        password: Td666666
       # 从库数据源
       slave:
         # 从数据源开关/默认关闭
@@ -125,13 +125,13 @@ spring:
   # redis 配置
   redis:
     # 地址
-    host: 192.168.100.168
+    host: r-2zekgpta23btrgcnh0pd.redis.rds.aliyuncs.com
     # 端口，默认为6379
     port: 6379
     # 数据库索引
     database: 0
     # 密码
-    password: 123456
+    password: Td666666
     # 连接超时时间
     timeout: 10s
     lettuce:
@@ -193,7 +193,7 @@ xss:
 aliyun:
   oss:
     endpoint: https://oss-cn-beijing.aliyuncs.com
-    bucketName: zznursing
+    bucketName: aizzylnursing
 
 dept:
   nursingId: 201

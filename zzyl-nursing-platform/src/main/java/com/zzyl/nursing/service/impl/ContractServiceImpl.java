@@ -1,23 +1,25 @@
 package com.zzyl.nursing.service.impl;
 
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zzyl.common.utils.DateUtils;
+import com.zzyl.nursing.domain.Contract;
+import com.zzyl.nursing.mapper.ContractMapper;
+import com.zzyl.nursing.service.IContractService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.zzyl.nursing.mapper.ContractMapper;
-import com.zzyl.nursing.domain.Contract;
-import com.zzyl.nursing.service.IContractService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * 合同Service业务层处理
  * 
  * @author alexis
- * @date 2025-06-10
+ * @date 2026-03-31
  */
 @Service
 public class ContractServiceImpl extends ServiceImpl<ContractMapper, Contract> implements IContractService
@@ -98,21 +100,48 @@ public class ContractServiceImpl extends ServiceImpl<ContractMapper, Contract> i
     }
 
     /**
-     * 更新合同状态
+     * Update contract status on schedule.
      */
     @Override
-    public void updateContractStatus() {
-        // 查询状态为0且合同开始时间小于等于当前时间且合同结束时间大于等于当前时间
-        List<Contract> list = list(Wrappers.<Contract>lambdaQuery()
-                .eq(Contract::getStatus, 0)
-                .le(Contract::getStartDate, LocalDateTime.now())
-                .ge(Contract::getEndDate, LocalDateTime.now()));
+    public void updateContractStatus()
+    {
+        LocalDateTime now = LocalDateTime.now();
+        List<Contract> contracts = list(Wrappers.<Contract>lambdaQuery()
+                .ne(Contract::getStatus, 3));
+        if (contracts.isEmpty())
+        {
+            return;
+        }
 
-        // 修改状态为1
-        list.forEach(contract -> {
-            contract.setStatus(1);
-        });
+        List<Contract> needUpdateContracts = new ArrayList<>();
+        for (Contract contract : contracts)
+        {
+            Integer latestStatus = calculateContractStatus(contract, now);
+            if (Objects.equals(contract.getStatus(), latestStatus))
+            {
+                continue;
+            }
+            contract.setStatus(latestStatus);
+            contract.setUpdateTime(DateUtils.getNowDate());
+            needUpdateContracts.add(contract);
+        }
 
-        updateBatchById(list);
+        if (!needUpdateContracts.isEmpty())
+        {
+            updateBatchById(needUpdateContracts);
+        }
+    }
+
+    private Integer calculateContractStatus(Contract contract, LocalDateTime now)
+    {
+        if (contract.getEndDate() != null && contract.getEndDate().isBefore(now))
+        {
+            return 2;
+        }
+        if (contract.getStartDate() != null && contract.getStartDate().isAfter(now))
+        {
+            return 0;
+        }
+        return 1;
     }
 }

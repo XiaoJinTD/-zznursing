@@ -3,36 +3,36 @@ package com.zzyl.nursing.controller;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
+import com.zzyl.common.annotation.Log;
+import com.zzyl.common.core.controller.BaseController;
+import com.zzyl.common.core.domain.AjaxResult;
 import com.zzyl.common.core.domain.R;
+import com.zzyl.common.core.page.TableDataInfo;
+import com.zzyl.common.enums.BusinessType;
+import com.zzyl.common.utils.poi.ExcelUtil;
+import com.zzyl.nursing.domain.CheckIn;
 import com.zzyl.nursing.dto.CheckInApplyDto;
+import com.zzyl.nursing.service.ICheckInService;
 import com.zzyl.nursing.vo.CheckInDetailVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.zzyl.common.annotation.Log;
-import com.zzyl.common.core.controller.BaseController;
-import com.zzyl.common.core.domain.AjaxResult;
-import com.zzyl.common.enums.BusinessType;
-import com.zzyl.nursing.domain.CheckIn;
-import com.zzyl.nursing.service.ICheckInService;
-import com.zzyl.common.utils.poi.ExcelUtil;
-import com.zzyl.common.core.page.TableDataInfo;
 
 /**
  * 入住Controller
- * 
+ *
  * @author alexis
- * @date 2025-06-10
+ * @date 2026-03-31
  */
 @Api("入住管理")
 @RestController
@@ -65,7 +65,7 @@ public class CheckInController extends BaseController
     public void export(@ApiParam("导出的查询条件") HttpServletResponse response, CheckIn checkIn)
     {
         List<CheckIn> list = checkInService.selectCheckInList(checkIn);
-        ExcelUtil<CheckIn> util = new ExcelUtil<CheckIn>(CheckIn.class);
+        ExcelUtil<CheckIn> util = new ExcelUtil<>(CheckIn.class);
         util.exportExcel(response, list, "入住数据");
     }
 
@@ -93,6 +93,19 @@ public class CheckInController extends BaseController
     }
 
     /**
+     * 申请入住
+     */
+    @ApiOperation("申请入住")
+    @PreAuthorize("@ss.hasPermi('nursing:checkIn:add')")
+    @Log(title = "入住申请", businessType = BusinessType.INSERT)
+    @PostMapping("/apply")
+    public AjaxResult apply(@RequestBody @ApiParam("申请入住请求对象") CheckInApplyDto dto)
+    {
+        checkInService.apply(dto);
+        return AjaxResult.success();
+    }
+
+    /**
      * 修改入住
      */
     @ApiOperation("修改入住")
@@ -110,21 +123,16 @@ public class CheckInController extends BaseController
     @ApiOperation("删除入住")
     @PreAuthorize("@ss.hasPermi('nursing:checkIn:remove')")
     @Log(title = "入住", businessType = BusinessType.DELETE)
-	@DeleteMapping("/{ids}")
+    @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable @ApiParam("要删除的入住ID") Long[] ids)
     {
         return toAjax(checkInService.deleteCheckInByIds(ids));
     }
 
-    @PostMapping("/apply")
-    public AjaxResult apply(@RequestBody CheckInApplyDto checkInApplyDto) {
-        checkInService.apply(checkInApplyDto);
-    	return AjaxResult.success();
-    }
-
     @GetMapping("/detail/{id}")
     @ApiOperation("查询入住详情")
-    public AjaxResult detail(@PathVariable("id") Long id) {
+    public AjaxResult detail(@PathVariable("id") Long id)
+    {
         CheckInDetailVo checkInDetailVo = checkInService.detail(id);
         return success(checkInDetailVo);
     }

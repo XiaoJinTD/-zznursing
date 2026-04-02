@@ -5,32 +5,40 @@ import java.util.Arrays;
 import java.util.List;
 
 import cn.hutool.core.util.IdcardUtil;
-import cn.hutool.core.util.ObjectUtil;
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zzyl.common.exception.base.BaseException;
 import com.zzyl.common.utils.CodeGenerator;
-import com.zzyl.common.utils.DateUtils;
-import com.zzyl.nursing.domain.*;
+import com.zzyl.common.utils.StringUtils;
+import com.zzyl.nursing.domain.Bed;
+import com.zzyl.nursing.domain.CheckIn;
+import com.zzyl.nursing.domain.CheckInConfig;
+import com.zzyl.nursing.domain.Contract;
+import com.zzyl.nursing.domain.Elder;
 import com.zzyl.nursing.dto.CheckInApplyDto;
 import com.zzyl.nursing.dto.CheckInElderDto;
-import com.zzyl.nursing.mapper.*;
+import com.zzyl.nursing.mapper.BedMapper;
+import com.zzyl.nursing.mapper.CheckInConfigMapper;
+import com.zzyl.nursing.mapper.CheckInMapper;
+import com.zzyl.nursing.mapper.ContractMapper;
+import com.zzyl.nursing.mapper.ElderMapper;
+import com.zzyl.nursing.service.ICheckInService;
 import com.zzyl.nursing.vo.CheckInConfigVo;
 import com.zzyl.nursing.vo.CheckInDetailVo;
 import com.zzyl.nursing.vo.CheckInElderVo;
 import com.zzyl.nursing.vo.ElderFamilyVo;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.zzyl.nursing.service.ICheckInService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 入住Service业务层处理
- * 
+ *
  * @author alexis
- * @date 2025-06-10
+ * @date 2026-03-31
  */
 @Service
 public class CheckInServiceImpl extends ServiceImpl<CheckInMapper, CheckIn> implements ICheckInService
@@ -45,14 +53,14 @@ public class CheckInServiceImpl extends ServiceImpl<CheckInMapper, CheckIn> impl
     private BedMapper bedMapper;
 
     @Autowired
-    private ContractMapper contractMapper;
+    private CheckInConfigMapper checkInConfigMapper;
 
     @Autowired
-    private CheckInConfigMapper checkInConfigMapper;
+    private ContractMapper contractMapper;
 
     /**
      * 查询入住
-     * 
+     *
      * @param id 入住主键
      * @return 入住
      */
@@ -64,7 +72,7 @@ public class CheckInServiceImpl extends ServiceImpl<CheckInMapper, CheckIn> impl
 
     /**
      * 查询入住列表
-     * 
+     *
      * @param checkIn 入住
      * @return 入住
      */
@@ -76,7 +84,7 @@ public class CheckInServiceImpl extends ServiceImpl<CheckInMapper, CheckIn> impl
 
     /**
      * 新增入住
-     * 
+     *
      * @param checkIn 入住
      * @return 结果
      */
@@ -88,7 +96,7 @@ public class CheckInServiceImpl extends ServiceImpl<CheckInMapper, CheckIn> impl
 
     /**
      * 修改入住
-     * 
+     *
      * @param checkIn 入住
      * @return 结果
      */
@@ -100,7 +108,7 @@ public class CheckInServiceImpl extends ServiceImpl<CheckInMapper, CheckIn> impl
 
     /**
      * 批量删除入住
-     * 
+     *
      * @param ids 需要删除的入住主键
      * @return 结果
      */
@@ -112,7 +120,7 @@ public class CheckInServiceImpl extends ServiceImpl<CheckInMapper, CheckIn> impl
 
     /**
      * 删除入住信息
-     * 
+     *
      * @param id 入住主键
      * @return 结果
      */
@@ -125,128 +133,140 @@ public class CheckInServiceImpl extends ServiceImpl<CheckInMapper, CheckIn> impl
     /**
      * 申请入住
      *
-     * @param checkInApplyDto 请求参数对象
+     * @param checkInApplyDto 申请入住信息
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void apply(CheckInApplyDto checkInApplyDto) {
-        // 校验老人是否已入住，如果已入住，抛出一个异常
-        LambdaQueryWrapper<Elder> elderQueryWrapper = new LambdaQueryWrapper<>();
-        elderQueryWrapper.eq(Elder::getIdCardNo, checkInApplyDto.getCheckInElderDto().getIdCardNo())
-                        .in(Elder::getStatus, 1, 4);
-        Elder elder = elderMapper.selectOne(elderQueryWrapper);
-        if (ObjectUtil.isNotEmpty(elder)) {
-            throw new BaseException("该老人已入住，请勿重复入住");
+    public void apply(CheckInApplyDto checkInApplyDto)
+    {
+        CheckInElderDto checkInElderDto = checkInApplyDto.getCheckInElderDto();
+        if (checkInElderDto == null || checkInApplyDto.getCheckInConfigDto() == null || checkInApplyDto.getCheckInContractDto() == null)
+        {
+            throw new BaseException("申请入住参数不完整");
         }
 
-        // 更新床位状态为已入住
+        LambdaQueryWrapper<Elder> elderQueryWrapper = new LambdaQueryWrapper<>();
+        elderQueryWrapper.eq(Elder::getIdCardNo, checkInElderDto.getIdCardNo());
+        elderQueryWrapper.eq(Elder::getStatus, 1);
+        Elder elder = elderMapper.selectOne(elderQueryWrapper);
+        if (ObjectUtils.isNotEmpty(elder))
+        {
+            throw new BaseException("老人已入住");
+        }
+
         Bed bed = bedMapper.selectById(checkInApplyDto.getCheckInConfigDto().getBedId());
+        if (bed == null)
+        {
+            throw new BaseException("床位不存在");
+        }
+        if (!Integer.valueOf(0).equals(bed.getBedStatus()))
+        {
+            throw new BaseException("床位已被占用");
+        }
         bed.setBedStatus(1);
         bedMapper.updateById(bed);
 
-        // 新增或者更新老人基本信息
-        elder = insertOrUpdateElder(bed, checkInApplyDto.getCheckInElderDto());
+        elder = insertOrUpdate(bed, checkInElderDto);
 
-        // 生成一个合同编号
         String contractNo = "HT" + CodeGenerator.generateContractNumber();
+        insertContract(contractNo, elder, checkInApplyDto);
 
-        // 新增签约办理
-        insertContract(elder, contractNo, checkInApplyDto);
-
-        // 新增入住信息
-        CheckIn checkIn = insertCheckInInfo(elder, checkInApplyDto);
-
-        // 新增入住配置
+        CheckIn checkIn = insertCheckIn(elder, checkInApplyDto);
         insertCheckInConfig(checkIn.getId(), checkInApplyDto);
     }
 
     /**
      * 新增入住配置
      *
-     * @param id 入住信息ID
-     * @param checkInApplyDto 入住申请信息
+     * @param checkInId 入住ID
+     * @param checkInApplyDto 申请入住信息
      */
-    private void insertCheckInConfig(Long id, CheckInApplyDto checkInApplyDto) {
+    private void insertCheckInConfig(Long checkInId, CheckInApplyDto checkInApplyDto)
+    {
         CheckInConfig checkInConfig = new CheckInConfig();
-        checkInConfig.setCheckInId(id);
-        // 属性拷贝
         BeanUtils.copyProperties(checkInApplyDto.getCheckInConfigDto(), checkInConfig);
+        checkInConfig.setCheckInId(checkInId);
         checkInConfigMapper.insert(checkInConfig);
     }
 
     /**
      * 新增入住信息
      *
-     * @param elder 老人信息
-     * @param checkInApplyDto 入住申请信息
+     * @param elder 老人
+     * @param checkInApplyDto 申请入住信息
+     * @return 入住记录
      */
-    private CheckIn insertCheckInInfo(Elder elder, CheckInApplyDto checkInApplyDto) {
+    private CheckIn insertCheckIn(Elder elder, CheckInApplyDto checkInApplyDto)
+    {
         CheckIn checkIn = new CheckIn();
         checkIn.setElderId(elder.getId());
         checkIn.setElderName(elder.getName());
         checkIn.setIdCardNo(elder.getIdCardNo());
+        checkIn.setNursingLevelName(checkInApplyDto.getCheckInConfigDto().getNursingLevelName());
         checkIn.setStartDate(checkInApplyDto.getCheckInConfigDto().getStartDate());
         checkIn.setEndDate(checkInApplyDto.getCheckInConfigDto().getEndDate());
-        checkIn.setNursingLevelName(checkInApplyDto.getCheckInConfigDto().getNursingLevelName());
         checkIn.setBedNumber(elder.getBedNumber());
-        checkIn.setStatus(0);
         checkIn.setRemark(JSON.toJSONString(checkInApplyDto.getElderFamilyDtoList()));
+        checkIn.setStatus(0);
         checkInMapper.insert(checkIn);
         return checkIn;
     }
 
     /**
-     * 新增签约办理
+     * 新增合同
      *
-     * @param elder 老人信息
      * @param contractNo 合同编号
-     * @param checkInApplyDto 入住申请信息
+     * @param elder 老人
+     * @param checkInApplyDto 申请入住信息
      */
-    private void insertContract(Elder elder, String contractNo, CheckInApplyDto checkInApplyDto) {
+    private void insertContract(String contractNo, Elder elder, CheckInApplyDto checkInApplyDto)
+    {
+        if (StringUtils.isBlank(checkInApplyDto.getCheckInContractDto().getAgreementPath()))
+        {
+            throw new BaseException("请上传合同文件");
+        }
+
         Contract contract = new Contract();
-        // 属性拷贝
         BeanUtils.copyProperties(checkInApplyDto.getCheckInContractDto(), contract);
         contract.setContractNumber(contractNo);
-        contract.setElderId(elder.getId());
+        contract.setElderId(Math.toIntExact(elder.getId()));
         contract.setElderName(elder.getName());
 
-        // 获取入住开始时间和入住结束时间
-        LocalDateTime startDate = checkInApplyDto.getCheckInConfigDto().getStartDate();
-        LocalDateTime endDate = checkInApplyDto.getCheckInConfigDto().getEndDate();
-        contract.setStartDate(startDate);
-        contract.setEndDate(endDate);
-        int status = startDate.isAfter(LocalDateTime.now()) ? 0 : 1;
+        LocalDateTime checkInStartTime = checkInApplyDto.getCheckInConfigDto().getStartDate();
+        LocalDateTime checkInEndTime = checkInApplyDto.getCheckInConfigDto().getEndDate();
+        Integer status = checkInStartTime != null && checkInStartTime.isAfter(LocalDateTime.now()) ? 0 : 1;
         contract.setStatus(status);
+        contract.setStartDate(checkInStartTime);
+        contract.setEndDate(checkInEndTime);
         contractMapper.insert(contract);
     }
 
     /**
-     * 新增或者更新老人信息
+     * 新增或更新老人
      *
-     * @param bed 床位信息
-     * @param checkInElderDto 入住老人信息
+     * @param bed 床位
+     * @param checkInElderDto 老人信息
+     * @return 老人
      */
-    private Elder insertOrUpdateElder(Bed bed, CheckInElderDto checkInElderDto) {
-        // 准备一个Elder对象
+    private Elder insertOrUpdate(Bed bed, CheckInElderDto checkInElderDto)
+    {
         Elder elder = new Elder();
-        // 属性拷贝
         BeanUtils.copyProperties(checkInElderDto, elder);
-        elder.setBedId(bed.getId());
         elder.setBedNumber(bed.getBedNumber());
+        elder.setBedId(bed.getId());
         elder.setStatus(1);
-        // 查询老人信息
+
         LambdaQueryWrapper<Elder> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(Elder::getIdCardNo, elder.getIdCardNo());
-        lambdaQueryWrapper.notIn(Elder::getStatus, 1, 4);
-        Elder elderInDb = elderMapper.selectOne(lambdaQueryWrapper);
-        if (ObjectUtil.isNotEmpty(elderInDb)) {
-            // 修改
-            elder.setId(elderInDb.getId());
+        lambdaQueryWrapper.eq(Elder::getIdCardNo, checkInElderDto.getIdCardNo()).ne(Elder::getStatus, 1);
+        Elder elderDb = elderMapper.selectOne(lambdaQueryWrapper);
+        if (ObjectUtils.isNotEmpty(elderDb))
+        {
+            elder.setId(elderDb.getId());
             elderMapper.updateById(elder);
-        } else {
-            // 新增
-            elderMapper.insert(elder);
+            return elder;
         }
+
+        elderMapper.insert(elder);
         return elder;
     }
 
@@ -257,39 +277,34 @@ public class CheckInServiceImpl extends ServiceImpl<CheckInMapper, CheckIn> impl
      * @return 入住详情
      */
     @Override
-    public CheckInDetailVo detail(Long id) {
-        // 准备结果对象
+    public CheckInDetailVo detail(Long id)
+    {
         CheckInDetailVo checkInDetailVo = new CheckInDetailVo();
-        // 1.设置入住配置响应信息
+
         CheckInConfigVo checkInConfigVo = new CheckInConfigVo();
         CheckIn checkIn = checkInMapper.selectById(id);
         BeanUtils.copyProperties(checkIn, checkInConfigVo);
 
-        CheckInConfig checkInConfig = checkInConfigMapper.selectOne(new LambdaQueryWrapper<CheckInConfig>().eq(CheckInConfig::getCheckInId, id));
+        CheckInConfig checkInConfig = checkInConfigMapper.selectOne(new LambdaQueryWrapper<CheckInConfig>()
+                .eq(CheckInConfig::getCheckInId, id));
         BeanUtils.copyProperties(checkInConfig, checkInConfigVo);
-
         checkInDetailVo.setCheckInConfigVo(checkInConfigVo);
 
-        // 2.设置老人响应信息
         CheckInElderVo checkInElderVo = new CheckInElderVo();
-        // 获取老人ID
         Long elderId = checkIn.getElderId();
         Elder elder = elderMapper.selectById(elderId);
         BeanUtils.copyProperties(elder, checkInElderVo);
-        // 从身份证号中获取老人的年龄
         checkInElderVo.setAge(IdcardUtil.getAgeByIdCard(elder.getIdCardNo()));
         checkInDetailVo.setCheckInElderVo(checkInElderVo);
 
-        // 3.设置家属响应信息
         String remark = checkIn.getRemark();
         List<ElderFamilyVo> elderFamilyVos = JSON.parseArray(remark, ElderFamilyVo.class);
         checkInDetailVo.setElderFamilyVoList(elderFamilyVos);
 
-        // 4.设置签约办理响应信息
-        Contract contract = contractMapper.selectOne(new LambdaQueryWrapper<Contract>().eq(Contract::getElderId, elderId));
+        Contract contract = contractMapper.selectOne(new LambdaQueryWrapper<Contract>()
+                .eq(Contract::getElderId, Math.toIntExact(elderId)));
         checkInDetailVo.setContract(contract);
 
-        // 5.返回结果
         return checkInDetailVo;
     }
 }

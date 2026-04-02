@@ -9,7 +9,7 @@ import org.apache.ibatis.annotations.Mapper;
  * 合同Mapper接口
  * 
  * @author alexis
- * @date 2025-06-10
+ * @date 2026-03-31
  */
 @Mapper
 public interface ContractMapper extends BaseMapper<Contract>

@@ -8,7 +8,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * 合同Service接口
  * 
  * @author alexis
- * @date 2025-06-10
+ * @date 2026-03-31
  */
 public interface IContractService extends IService<Contract>
 {
@@ -61,7 +61,7 @@ public interface IContractService extends IService<Contract>
     public int deleteContractById(Long id);
 
     /**
-     * 更新合同状态
+     * Update contract status on schedule.
      */
     void updateContractStatus();
 }

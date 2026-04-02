@@ -14,7 +14,7 @@ import com.zzyl.common.core.domain.BaseEntity;
  * 合同对象 contract
  * 
  * @author alexis
- * @date 2025-06-10
+ * @date 2026-03-31
  */
 @Data
 @NoArgsConstructor
@@ -31,7 +31,7 @@ public class Contract extends BaseEntity
     /** 老人ID */
     @Excel(name = "老人ID")
     @ApiModelProperty("老人ID")
-    private Long elderId;
+    private Integer elderId;
 
     /** 合同名称 */
     @Excel(name = "合同名称")

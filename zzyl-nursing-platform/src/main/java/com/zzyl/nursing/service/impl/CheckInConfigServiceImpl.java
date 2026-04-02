@@ -14,7 +14,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
  * 入住配置Service业务层处理
  * 
  * @author alexis
- * @date 2025-06-10
+ * @date 2026-03-31
  */
 @Service
 public class CheckInConfigServiceImpl extends ServiceImpl<CheckInConfigMapper, CheckInConfig> implements ICheckInConfigService

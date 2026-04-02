@@ -15,7 +15,7 @@ import com.zzyl.common.core.domain.BaseEntity;
  * 入住配置对象 check_in_config
  * 
  * @author alexis
- * @date 2025-06-10
+ * @date 2026-03-31
  */
 @Data
 @NoArgsConstructor
