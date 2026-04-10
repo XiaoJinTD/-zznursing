@@ -201,7 +201,7 @@ dept:
 # 百度千帆大模型配置
 baidu:
   qianfan:
-    apiKey: bce-v3/ALTAK-4VXbijt1HIxOSAlBnKJ7j/d86f290404cfa9a236d51a749b58a4fe866bfab1
+    apiKey: bce-v3/ALTAK-7Pj5D06PLDQGqESNOSznF/ea6d9af68b3ead9f8c0112c4dcbeabe5f029f7a2
     baseUrl: https://qianfan.baidubce.com/v2/
     model: ernie-4.0-8k
 

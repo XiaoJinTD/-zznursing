@@ -32,6 +32,8 @@ public class NursingLevelServiceImpl extends ServiceImpl<NursingLevelMapper, Nur
     @Autowired
     private RedisTemplate<Object, Object> redisTemplate;
 
+    private static final String CACHE_KEY_PREFIX = "nursingLevel:all";
+
     /**
      * 查询护理等级
      * 
@@ -65,17 +67,17 @@ public class NursingLevelServiceImpl extends ServiceImpl<NursingLevelMapper, Nur
     @Override
     public int insertNursingLevel(NursingLevel nursingLevel)
     {
-        boolean flag = save(nursingLevel);
+        nursingLevel.setCreateTime(DateUtils.getNowDate());
+        int flag = nursingLevelMapper.insertNursingLevel(nursingLevel);
         // 删除缓存
         deleteCache();
-        return flag ? 1 : 0;
+        return flag;
     }
 
-    /**
-     * 删除缓存
-     */
+
     private void deleteCache() {
-        redisTemplate.delete(CacheConstants.NURSING_LEVEL_ALL_KEY);
+        // 删除缓存
+        redisTemplate.delete(CACHE_KEY_PREFIX);
     }
 
     /**
@@ -87,10 +89,10 @@ public class NursingLevelServiceImpl extends ServiceImpl<NursingLevelMapper, Nur
     @Override
     public int updateNursingLevel(NursingLevel nursingLevel)
     {
-        boolean flag = updateById(nursingLevel);
-        // 删除缓存
+        nursingLevel.setUpdateTime(DateUtils.getNowDate());
+        int flag =  nursingLevelMapper.updateNursingLevel(nursingLevel);
         deleteCache();
-        return flag ? 1 : 0;
+        return flag;
     }
 
     /**
@@ -102,10 +104,9 @@ public class NursingLevelServiceImpl extends ServiceImpl<NursingLevelMapper, Nur
     @Override
     public int deleteNursingLevelByIds(Long[] ids)
     {
-        boolean flag = removeByIds(Arrays.asList(ids));
-        // 删除缓存
+        int flag = nursingLevelMapper.deleteNursingLevelByIds(ids);
         deleteCache();
-        return flag ? 1 : 0;
+        return flag;
     }
 
     /**
@@ -117,10 +118,9 @@ public class NursingLevelServiceImpl extends ServiceImpl<NursingLevelMapper, Nur
     @Override
     public int deleteNursingLevelById(Long id)
     {
-        boolean flag = removeById(id);
-        // 删除缓存
+        int flag = nursingLevelMapper.deleteNursingLevelById(id);
         deleteCache();
-        return flag ? 1 : 0;
+        return flag;
     }
 
     /**
@@ -136,26 +136,24 @@ public class NursingLevelServiceImpl extends ServiceImpl<NursingLevelMapper, Nur
 
     /**
      * 查询所有护理等级
-     *
-     * @return 结果
+     * @return
      */
     @Override
     public List<NursingLevel> listAll() {
-        // 从缓存中查询所有护理等级
-        List<NursingLevel> list = (List<NursingLevel>) redisTemplate.opsForValue().get(CacheConstants.NURSING_LEVEL_ALL_KEY);
 
-        // 如果缓存中查到了，直接返回
+        // 从缓存中获取
+        List<NursingLevel> list = (List<NursingLevel>) redisTemplate.opsForValue().get(CACHE_KEY_PREFIX);
+        // 缓存中有数据，直接返回
         if (ObjectUtil.isNotEmpty(list)) {
             return list;
         }
-
-        // 如果缓存中没有查到，则从数据库中查询，并将查询到的结果放入缓存中
+        // 缓存中没有数据，从数据库中查询
         LambdaQueryWrapper<NursingLevel> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(NursingLevel::getStatus, 1);
         list = list(queryWrapper);
+        // 将数据写入缓存
+        redisTemplate.opsForValue().set(CACHE_KEY_PREFIX, list);
 
-        // 将查询到的结果放入缓存
-        redisTemplate.opsForValue().set(CacheConstants.NURSING_LEVEL_ALL_KEY, list);
         return list;
     }
 }

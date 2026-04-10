@@ -61,7 +61,7 @@ public interface IContractService extends IService<Contract>
     public int deleteContractById(Long id);
 
     /**
-     * Update contract status on schedule.
+     * 更新合同状态
      */
     void updateContractStatus();
 }
