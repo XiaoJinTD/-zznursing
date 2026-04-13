@@ -22,7 +22,7 @@ pipeline {
                           doGenerateSubmoduleConfigurations: false,
                           extensions: [],
                           submoduleCfg: [],
-                          userRemoteConfigs: [[credentialsId: 'Gitee_ID', url: GIT_URL]]
+                          userRemoteConfigs: [[credentialsId: 'GitHub_ID', url: GIT_URL]]
                 ])
                 sh "pwd"
             }
